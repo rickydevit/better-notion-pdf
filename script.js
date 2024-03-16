@@ -1,30 +1,720 @@
 const fileInput = document.getElementById('file-input');
+const fileInputMerge = document.getElementById('file-input-merge');
 const downloadButton = document.getElementById('download-button');
+const mergeButton = document.getElementById('merge-button');
+const fileList = document.getElementById('file-list');
+
 var editor = document.createElement('div');
+var filesData = [];
 
 const previewHtml = document.getElementById('previewHtml');
 const removeProps = document.getElementById('removeProps');
+const mergeBreak = document.getElementById('mergeBreak');
 const fontSize = document.getElementById('fontSize');
+const mergeName = document.getElementById('mergeName');
+const indexName = document.getElementById('indexName');
+const mergingPdfCounter = document.getElementById('mergingPdfCounter');
 
-function newStyle(fontSize) { 
-  return "html {\n\t-webkit-print-color-adjust: exact;\n}\n* {\n\tbox-sizing: border-box;\n\t-webkit-print-color-adjust: exact;\n}\n\nhtml,\nbody {\n\tmargin: 0;\n\tpadding: 0;\n}\n@media only screen {\n\tbody {\n\t\tmargin: 2em auto;\n\t\tmax-width: 900px;\n\t\tcolor: rgb(55, 53, 47);\n\t}\n}\n\nbody {\n\tline-height: 1.5;\n\twhite-space: pre-wrap;\n\tfont-size: " + fontSize + "px;\n}\n\na,\na.visited {\n\tcolor: inherit;\n\ttext-decoration: underline;\n}\n\n.pdf-relative-link-path {\n\tfont-size: 80%;\n\tcolor: #444;\n}\n\nh1,\nh2,\nh3 {\n\tletter-spacing: -0.01em;\n\tline-height: 1.2;\n\tfont-weight: 600;\n\tmargin-bottom: 0;\n\tpage-break-after: avoid;\n}\n\n.page-title {\n\tfont-size: 2.5rem;\n\tfont-weight: 700;\n\tmargin-top: 0;\n\tmargin-bottom: 0.75em;\n}\n\nh1 {\n\tfont-size: 1.875rem;\n\tmargin-top: 1.875rem;\n}\n\nh2 {\n\tfont-size: 1.5rem;\n\tmargin-top: 1.5rem;\n}\n\nh3 {\n\tfont-size: 1.25rem;\n\tmargin-top: 1.25rem;\n}\n\n.source {\n\tborder: 1px solid #ddd;\n\tborder-radius: 3px;\n\tpadding: 1.5em;\n\tword-break: break-all;\n}\n\n.callout {\n\tborder-radius: 10px;\n\tpadding: 1rem;\n}\n\nfigure {\n\tmargin: 1.25em 0;\n\tpage-break-inside: avoid;\n}\n\nfigcaption {\n\topacity: 0.5;\n\tfont-size: 85%;\n\tmargin-top: 0.5em;\n}\n\nmark {\n\tbackground-color: transparent;\n}\n\n.indented {\n\tpadding-left: 1.5em;\n}\n\nhr {\n\tbackground: transparent;\n\tdisplay: block;\n\twidth: 100%;\n\theight: 1px;\n\tvisibility: visible;\n\tborder: none;\n\tborder-bottom: 1px solid rgba(55, 53, 47, 0.09);\n}\n\nimg {\n\tmax-width: 100%;\n\twidth: 1.2rem;\n}\n\n@media only print {\n\timg {\n\t\tmax-height: 100vh;\n\t\tobject-fit: contain;\n\t}\n}\n\n@page {\n\tmargin: 1in;\n}\n\n.collection-content {\n\tfont-size: 0.875rem;\n}\n\n.column-list {\n\tdisplay: flex;\n\tjustify-content: space-between;\n}\n\n.column {\n\tpadding: 0 1em;\n}\n\n.column:first-child {\n\tpadding-left: 0;\n}\n\n.column:last-child {\n\tpadding-right: 0;\n}\n\nnav {\n\tmargin-bottom: 2rem;\n}\n\n.table_of_contents-item {\n\tdisplay: block;\n\tfont-size: 0.875rem;\n\tline-height: 1.3;\n\tpadding: 0.125rem;\n}\n\n.table_of_contents-indent-1 {\n\tmargin-left: 1.5rem;\n}\n\n.table_of_contents-indent-2 {\n\tmargin-left: 3rem;\n}\n\n.table_of_contents-indent-3 {\n\tmargin-left: 4.5rem;\n}\n\n.table_of_contents-link {\n\ttext-decoration: none;\n\topacity: 0.7;\n\tborder-bottom: 1px solid rgba(55, 53, 47, 0.18);\n}\n\ntable,\nth,\ntd {\n\tborder: 1px solid rgba(55, 53, 47, 0.09);\n\tborder-collapse: collapse;\n\twidth: 100%;\n\tpage-break-inside: avoid;\n}\n\ntable {\n\tborder-left: none;\n\tborder-right: none;\n}\n\nth,\ntd {\n\tfont-weight: normal;\n\tpadding: 0.25em 0.5em;\n\tline-height: 1.5;\n\tmin-height: 1.5em;\n\ttext-align: left;\n}\n\nth {\n\tcolor: rgba(55, 53, 47, 0.6);\n}\n\nol,\nul {\n\tmargin: 0;\n\tmargin-block-start: 0.6em;\n\tmargin-block-end: 0.6em;\n}\n\nli > ol:first-child,\nli > ul:first-child {\n\tmargin-block-start: 0.6em;\n}\n\nul > li {\n\tlist-style: disc;\n}\n\nul.to-do-list {\n\tpadding-inline-start: 0;\n}\n\nul.to-do-list > li {\n\tlist-style: none;\n}\n\n.to-do-children-checked {\n\ttext-decoration: line-through;\n\topacity: 0.375;\n}\n\nul.toggle > li {\n\tlist-style: none;\n}\n\nul {\n\tpadding-inline-start: 1.7em;\n}\n\nul > li {\n\tpadding-left: 0.1em;\n}\n\nol {\n\tpadding-inline-start: 1.6em;\n}\n\nol > li {\n\tpadding-left: 0.2em;\n}\n\n.mono ol {\n\tpadding-inline-start: 2em;\n}\n\n.mono ol > li {\n\ttext-indent: -0.4em;\n}\n\n.toggle {\n\tpadding-inline-start: 0em;\n\tlist-style-type: none;\n}\n\n/* Indent toggle children */\n.toggle > li > details {\n\tpadding-left: 1.7em;\n}\n\n.toggle > li > details > summary {\n\tmargin-left: -1.1em;\n}\n\n.selected-value {\n\tdisplay: inline-block;\n\tpadding: 0 0.5em;\n\tbackground: rgba(206, 205, 202, 0.5);\n\tborder-radius: 3px;\n\tmargin-right: 0.5em;\n\tmargin-top: 0.3em;\n\tmargin-bottom: 0.3em;\n\twhite-space: nowrap;\n}\n\n.collection-title {\n\tdisplay: inline-block;\n\tmargin-right: 1em;\n}\n\n.page-description {\n    margin-bottom: 2em;\n}\n\n.simple-table {\n\tmargin-top: 1em;\n\tfont-size: 0.875rem;\n\tempty-cells: show;\n}\n.simple-table td {\n\theight: 29px;\n\tmin-width: 120px;\n}\n\n.simple-table th {\n\theight: 29px;\n\tmin-width: 120px;\n}\n\n.simple-table-header-color {\n\tbackground: rgb(247, 246, 243);\n\tcolor: black;\n}\n.simple-table-header {\n\tfont-weight: 500;\n}\n\ntime {\n\topacity: 0.5;\n}\n\n.icon {\n\tdisplay: inline-block;\n\tmax-width: 1.2em;\n\tmax-height: 1.2em;\n\ttext-decoration: none;\n\tvertical-align: text-bottom;\n\tmargin-right: 0.5em;\n}\n\nimg.icon {\n\tborder-radius: 3px;\n}\n\n.user-icon {\n\twidth: 1.5em;\n\theight: 1.5em;\n\tborder-radius: 100%;\n\tmargin-right: 0.5rem;\n}\n\n.user-icon-inner {\n\tfont-size: 0.8em;\n}\n\n.text-icon {\n\tborder: 1px solid #000;\n\ttext-align: center;\n}\n\n.page-cover-image {\n\tdisplay: block;\n\tobject-fit: cover;\n\twidth: 100%;\n\tmax-height: 30vh;\n}\n\n.page-header-icon {\n\tfont-size: 3rem;\n\tmargin-bottom: 1rem;\n}\n\n.page-header-icon-with-cover {\n\tmargin-top: -0.72em;\n\tmargin-left: 0.07em;\n}\n\n.page-header-icon img {\n\tborder-radius: 3px;\n}\n\n.link-to-page {\n\tmargin: 1em 0;\n\tpadding: 0;\n\tborder: none;\n\tfont-weight: 500;\n}\n\np > .user {\n\topacity: 0.5;\n}\n\ntd > .user,\ntd > time {\n\twhite-space: nowrap;\n}\n\ninput[type=\"checkbox\"] {\n\ttransform: scale(1.5);\n\tmargin-right: 0.6em;\n\tvertical-align: middle;\n}\n\np {\n\tmargin-top: 0.5em;\n\tmargin-bottom: 0.5em;\n}\n\n.image {\n\tborder: none;\n\tmargin: 1.5em 0;\n\tpadding: 0;\n\tborder-radius: 0;\n\ttext-align: center;\n}\n\n.code,\ncode {\n\tbackground: rgba(135, 131, 120, 0.15);\n\tborder-radius: 3px;\n\tpadding: 0.2em 0.4em;\n\tborder-radius: 5px;\n\tfont-size: 85%;\n\ttab-size: 2;\n}\n\ncode {\n\tcolor: inherit;\n}\n\n.code {\n\tpadding: 1.5em 1em;\n}\n\n.code-wrap {\n\twhite-space: pre-wrap;\n\tword-break: break-all;\n}\n\n.code > code {\n\tbackground: none;\n\tpadding: 0;\n\tfont-size: 100%;\n\tcolor: inherit;\n}\n\nblockquote {\n\tfont-size: 1.25em;\n\tmargin: 1em 0;\n\tpadding-left: 1em;\n\tborder-left: 3px solid rgb(55, 53, 47);\n}\n\n.bookmark {\n\ttext-decoration: none;\n\tmax-height: 8em;\n\tpadding: 0;\n\tdisplay: flex;\n\twidth: 100%;\n\talign-items: stretch;\n}\n\n.bookmark-title {\n\tfont-size: 0.85em;\n\toverflow: hidden;\n\ttext-overflow: ellipsis;\n\theight: 1.75em;\n\twhite-space: nowrap;\n}\n\n.bookmark-text {\n\tdisplay: flex;\n\tflex-direction: column;\n}\n\n.bookmark-info {\n\tflex: 4 1 180px;\n\tpadding: 12px 14px 14px;\n\tdisplay: flex;\n\tflex-direction: column;\n\tjustify-content: space-between;\n}\n\n.bookmark-image {\n\twidth: 33%;\n\tflex: 1 1 180px;\n\tdisplay: block;\n\tposition: relative;\n\tobject-fit: cover;\n\tborder-radius: 1px;\n}\n\n.bookmark-description {\n\tcolor: rgba(55, 53, 47, 0.6);\n\tfont-size: 0.75em;\n\toverflow: hidden;\n\tmax-height: 4.5em;\n\tword-break: break-word;\n}\n\n.bookmark-href {\n\tfont-size: 0.75em;\n\tmargin-top: 0.25em;\n}\n\n.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\"; }\n.code { font-family: \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace; }\n.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }\n.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }\n.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans CJK JP\'; }\n.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans CJK SC\'; }\n.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans CJK TC\'; }\n.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans CJK KR\'; }\n.pdf .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK JP\'; }\n.pdf:lang(zh-CN) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK SC\'; }\n.pdf:lang(zh-TW) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK TC\'; }\n.pdf:lang(ko-KR) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK KR\'; }\n.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, \'Twemoji\', \'Noto Color Emoji\', \'Noto Serif CJK JP\'; }\n.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, \'Twemoji\', \'Noto Color Emoji\', \'Noto Serif CJK SC\'; }\n.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, \'Twemoji\', \'Noto Color Emoji\', \'Noto Serif CJK TC\'; }\n.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, \'Twemoji\', \'Noto Color Emoji\', \'Noto Serif CJK KR\'; }\n.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK JP\'; }\n.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK SC\'; }\n.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK TC\'; }\n.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, \'Twemoji\', \'Noto Color Emoji\', \'Noto Sans Mono CJK KR\'; }\n.highlight-default {\n\tcolor: rgba(55, 53, 47, 1);\n}\n.highlight-gray {\n\tcolor: rgba(120, 119, 116, 1);\n\tfill: rgba(120, 119, 116, 1);\n}\n.highlight-brown {\n\tcolor: rgba(159, 107, 83, 1);\n\tfill: rgba(159, 107, 83, 1);\n}\n.highlight-orange {\n\tcolor: rgba(217, 115, 13, 1);\n\tfill: rgba(217, 115, 13, 1);\n}\n.highlight-yellow {\n\tcolor: rgba(203, 145, 47, 1);\n\tfill: rgba(203, 145, 47, 1);\n}\n.highlight-teal {\n\tcolor: rgba(68, 131, 97, 1);\n\tfill: rgba(68, 131, 97, 1);\n}\n.highlight-blue {\n\tcolor: rgba(51, 126, 169, 1);\n\tfill: rgba(51, 126, 169, 1);\n}\n.highlight-purple {\n\tcolor: rgba(144, 101, 176, 1);\n\tfill: rgba(144, 101, 176, 1);\n}\n.highlight-pink {\n\tcolor: rgba(193, 76, 138, 1);\n\tfill: rgba(193, 76, 138, 1);\n}\n.highlight-red {\n\tcolor: rgba(212, 76, 71, 1);\n\tfill: rgba(212, 76, 71, 1);\n}\n.highlight-gray_background {\n\tbackground: rgba(241, 241, 239, 1);\n}\n.highlight-brown_background {\n\tbackground: rgba(244, 238, 238, 1);\n}\n.highlight-orange_background {\n\tbackground: rgba(251, 236, 221, 1);\n}\n.highlight-yellow_background {\n\tbackground: rgba(251, 243, 219, 1);\n}\n.highlight-teal_background {\n\tbackground: rgba(237, 243, 236, 1);\n}\n.highlight-blue_background {\n\tbackground: rgba(231, 243, 248, 1);\n}\n.highlight-purple_background {\n\tbackground: rgba(244, 240, 247, 0.8);\n}\n.highlight-pink_background {\n\tbackground: rgba(249, 238, 243, 0.8);\n}\n.highlight-red_background {\n\tbackground: rgba(253, 235, 236, 1);\n}\n.block-color-default {\n\tcolor: inherit;\n\tfill: inherit;\n\tborder: #bbb 1px solid;\n}\n.block-color-gray {\n\tcolor: rgba(120, 119, 116, 1);\n\tfill: rgba(120, 119, 116, 1);\n}\n.block-color-brown {\n\tcolor: rgba(159, 107, 83, 1);\n\tfill: rgba(159, 107, 83, 1);\n}\n.block-color-orange {\n\tcolor: rgba(217, 115, 13, 1);\n\tfill: rgba(217, 115, 13, 1);\n}\n.block-color-yellow {\n\tcolor: rgba(203, 145, 47, 1);\n\tfill: rgba(203, 145, 47, 1);\n}\n.block-color-teal {\n\tcolor: rgba(68, 131, 97, 1);\n\tfill: rgba(68, 131, 97, 1);\n}\n.block-color-blue {\n\tcolor: rgba(51, 126, 169, 1);\n\tfill: rgba(51, 126, 169, 1);\n}\n.block-color-purple {\n\tcolor: rgba(144, 101, 176, 1);\n\tfill: rgba(144, 101, 176, 1);\n}\n.block-color-pink {\n\tcolor: rgba(193, 76, 138, 1);\n\tfill: rgba(193, 76, 138, 1);\n}\n.block-color-red {\n\tcolor: rgba(212, 76, 71, 1);\n\tfill: rgba(212, 76, 71, 1);\n}\n.block-color-gray_background {\n\tbackground: rgba(241, 241, 239, 1);\n}\n.block-color-brown_background {\n\tbackground: rgba(244, 238, 238, 1);\n}\n.block-color-orange_background {\n\tbackground: rgba(251, 236, 221, 1);\n}\n.block-color-yellow_background {\n\tbackground: rgba(251, 243, 219, 1);\n}\n.block-color-teal_background {\n\tbackground: rgba(237, 243, 236, 1);\n}\n.block-color-blue_background {\n\tbackground: rgba(231, 243, 248, 1);\n}\n.block-color-purple_background {\n\tbackground: rgba(244, 240, 247, 0.8);\n}\n.block-color-pink_background {\n\tbackground: rgba(249, 238, 243, 0.8);\n}\n.block-color-red_background {\n\tbackground: rgba(253, 235, 236, 1);\n}\n.select-value-color-uiBlue { background-color: rgba(35, 131, 226, .07); }\n.select-value-color-pink { background-color: rgba(245, 224, 233, 1); }\n.select-value-color-purple { background-color: rgba(232, 222, 238, 1); }\n.select-value-color-green { background-color: rgba(219, 237, 219, 1); }\n.select-value-color-gray { background-color: rgba(227, 226, 224, 1); }\n.select-value-color-translucentGray { background-color: rgba(255, 255, 255, 0.0375); }\n.select-value-color-orange { background-color: rgba(250, 222, 201, 1); }\n.select-value-color-brown { background-color: rgba(238, 224, 218, 1); }\n.select-value-color-red { background-color: rgba(255, 226, 221, 1); }\n.select-value-color-yellow { background-color: rgba(253, 236, 200, 1); }\n.select-value-color-blue { background-color: rgba(211, 229, 239, 1); }\n.select-value-color-pageGlass { background-color: undefined; }\n.select-value-color-washGlass { background-color: undefined; }\n\n.checkbox {\n\tdisplay: inline-flex;\n\tvertical-align: text-bottom;\n\twidth: 16;\n\theight: 16;\n\tbackground-size: 16px;\n\tmargin-left: 2px;\n\tmargin-right: 5px;\n}\n\n.checkbox-on {\n\tbackground-image: url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E\");\n}\n\n.checkbox-off {\n\tbackground-image: url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E\");\n}\n\n.equation-container\n{\npage-break-after: avoid;\npage-break-before: avoid;\n}"; 
+function newStyle(fontSize, mergeBreak) {
+  return "html {	-webkit-print-color-adjust: exact; \
+  } \
+  * { \
+    box-sizing: border-box; \
+    -webkit-print-color-adjust: exact; \
+  } \
+   \
+  html, \
+  body { \
+    margin: 0; \
+    padding: 0; \
+  } \
+  @media only screen { \
+    body { \
+      margin: 2em auto; \
+      max-width: 900px; \
+      color: rgb(55, 53, 47); \
+    } \
+  } \
+   \
+  body { \
+    line-height: 1.5; \
+    white-space: pre-wrap; \
+    font-size: " + fontSize + "px; \
+  } \
+   \
+  a, \
+  a.visited { \
+    color: inherit; \
+    text-decoration: underline; \
+  } \
+   \
+  .pdf-relative-link-path { \
+    font-size: 80%; \
+    color: #444; \
+  } \
+   \
+  h1, \
+  h2, \
+  h3 { \
+    letter-spacing: -0.01em; \
+    line-height: 1.2; \
+    font-weight: 600; \
+    margin-bottom: 0; \
+    page-break-after: avoid; \
+  } \
+   \
+  .page-title { \
+    font-size: 2.5rem; \
+    font-weight: 700; \
+    margin-top: " + (mergeBreak ? '0' : '2rem') + "; \
+    margin-bottom: 0.75em; \
+    page-break-before: " + (mergeBreak ? 'always' : 'unset') + "; \
+  } \
+   \
+  h1 { \
+    font-size: 1.875rem; \
+    margin-top: 1.875rem; \
+  } \
+   \
+  h2 { \
+    font-size: 1.5rem; \
+    margin-top: 1.5rem; \
+  } \
+   \
+  h3 { \
+    font-size: 1.25rem; \
+    margin-top: 1.25rem; \
+  } \
+   \
+  .source { \
+    border: 1px solid #ddd; \
+    border-radius: 3px; \
+    padding: 1.5em; \
+    word-break: break-all; \
+  } \
+   \
+  .callout { \
+    border-radius: 10px; \
+    padding: 1rem; \
+  } \
+   \
+  figure { \
+    margin: 1.25em 0; \
+    page-break-inside: avoid; \
+  } \
+   \
+  figcaption { \
+    opacity: 0.5; \
+    font-size: 85%; \
+    margin-top: 0.5em; \
+  } \
+   \
+  mark { \
+    background-color: transparent; \
+  } \
+   \
+  .indented { \
+    padding-left: 1.5em; \
+  } \
+   \
+  hr { \
+    background: transparent; \
+    display: block; \
+    width: 100%; \
+    height: 1px; \
+    visibility: visible; \
+    border: none; \
+    border-bottom: 1px solid rgba(55, 53, 47, 0.09); \
+  } \
+   \
+  img { \
+    max-width: 100%; \
+    width: 1.2rem; \
+  } \
+   \
+  @media only print { \
+    img { \
+      max-height: 100vh; \
+      object-fit: contain; \
+    } \
+  } \
+   \
+  @page { \
+    margin: 1in; \
+  } \
+   \
+  .collection-content { \
+    font-size: 0.875rem; \
+  } \
+   \
+  .column-list { \
+    display: flex; \
+    justify-content: space-between; \
+  } \
+   \
+  .column { \
+    padding: 0 1em; \
+  } \
+   \
+  .column:first-child { \
+    padding-left: 0; \
+  } \
+   \
+  .column:last-child { \
+    padding-right: 0; \
+  } \
+   \
+  nav { \
+    margin-bottom: 2rem; \
+  } \
+   \
+  .table_of_contents-item { \
+    display: block; \
+    font-size: 0.875rem; \
+    line-height: 1.3; \
+    padding: 0.125rem; \
+  } \
+   \
+  .table_of_contents-indent-1 { \
+    margin-left: 1.5rem; \
+  } \
+   \
+  .table_of_contents-indent-2 { \
+    margin-left: 3rem; \
+  } \
+   \
+  .table_of_contents-indent-3 { \
+    margin-left: 4.5rem; \
+  } \
+   \
+  .table_of_contents-link { \
+    text-decoration: none; \
+    opacity: 0.7; \
+    border-bottom: 1px solid rgba(55, 53, 47, 0.18); \
+  } \
+   \
+  table, \
+  th, \
+  td { \
+    border: 1px solid rgba(55, 53, 47, 0.09); \
+    border-collapse: collapse; \
+    width: 100%; \
+  } \
+   \
+  table { \
+    border-left: none; \
+    border-right: none; \
+  } \
+   \
+  tr { \
+    page-break-inside: avoid; \
+  }  \
+   \
+  th, \
+  td { \
+    font-weight: normal; \
+    padding: 0.25em 0.5em; \
+    line-height: 1.5; \
+    min-height: 1.5em; \
+    text-align: left; \
+  } \
+   \
+  th { \
+    color: rgba(55, 53, 47, 0.6); \
+  } \
+   \
+  ol, \
+  ul { \
+    margin: 0; \
+    margin-block-start: 0.6em; \
+    margin-block-end: 0.6em; \
+  } \
+   \
+  li > ol:first-child, \
+  li > ul:first-child { \
+    margin-block-start: 0.6em; \
+  } \
+   \
+  ul > li { \
+    list-style: disc; \
+  } \
+   \
+  ul.to-do-list { \
+    padding-inline-start: 0; \
+  } \
+   \
+  ul.to-do-list > li { \
+    list-style: none; \
+  } \
+   \
+  .to-do-children-checked { \
+    text-decoration: line-through; \
+    opacity: 0.375; \
+  } \
+   \
+  ul.toggle > li { \
+    list-style: none; \
+  } \
+   \
+  ul { \
+    padding-inline-start: 1.7em; \
+  } \
+   \
+  ul > li { \
+    padding-left: 0.1em; \
+  } \
+   \
+  ol { \
+    padding-inline-start: 1.6em; \
+  } \
+   \
+  ol > li { \
+    padding-left: 0.2em; \
+  } \
+   \
+  .mono ol { \
+    padding-inline-start: 2em; \
+  } \
+   \
+  .mono ol > li { \
+    text-indent: -0.4em; \
+  } \
+   \
+  .toggle { \
+    padding-inline-start: 0em; \
+    list-style-type: none; \
+  } \
+   \
+  /* Indent toggle children */ \
+  .toggle > li > details { \
+    padding-left: 1.7em; \
+  } \
+   \
+  .toggle > li > details > summary { \
+    margin-left: -1.1em; \
+  } \
+   \
+  .selected-value { \
+    display: inline-block; \
+    padding: 0 0.5em; \
+    background: rgba(206, 205, 202, 0.5); \
+    border-radius: 3px; \
+    margin-right: 0.5em; \
+    margin-top: 0.3em; \
+    margin-bottom: 0.3em; \
+    white-space: nowrap; \
+  } \
+   \
+  .collection-title { \
+    display: inline-block; \
+    margin-right: 1em; \
+  } \
+   \
+  .page-description { \
+      margin-bottom: 2em; \
+  } \
+   \
+  .simple-table { \
+    margin-top: 1em; \
+    font-size: " + fontSize + "; \
+    empty-cells: show; \
+  } \
+  .simple-table td { \
+    height: 29px; \
+    min-width: 120px; \
+  } \
+   \
+  .simple-table th { \
+    height: 29px; \
+    min-width: 120px; \
+  } \
+   \
+  .simple-table-header-color { \
+    background: rgb(247, 246, 243); \
+    color: black; \
+  } \
+  .simple-table-header { \
+    font-weight: 500; \
+  } \
+   \
+  time { \
+    opacity: 0.5; \
+  } \
+   \
+  .icon { \
+    display: inline-block; \
+    max-width: 1.2em; \
+    max-height: 1.2em; \
+    text-decoration: none; \
+    vertical-align: text-bottom; \
+    margin-right: 0.5em; \
+  } \
+   \
+  img.icon { \
+    border-radius: 3px; \
+  } \
+   \
+  .user-icon { \
+    width: 1.5em; \
+    height: 1.5em; \
+    border-radius: 100%; \
+    margin-right: 0.5rem; \
+  } \
+   \
+  .user-icon-inner { \
+    font-size: 0.8em; \
+  } \
+   \
+  .text-icon { \
+    border: 1px solid #000; \
+    text-align: center; \
+  } \
+   \
+  .page-cover-image { \
+    display: block; \
+    object-fit: cover; \
+    width: 100%; \
+    max-height: 30vh; \
+  } \
+   \
+  .page-header-icon { \
+    font-size: 3rem; \
+    margin-bottom: 1rem; \
+  } \
+   \
+  .page-header-icon-with-cover { \
+    margin-top: -0.72em; \
+    margin-left: 0.07em; \
+  } \
+   \
+  .page-header-icon img { \
+    border-radius: 3px; \
+  } \
+   \
+  .link-to-page { \
+    margin: 1em 0; \
+    padding: 0; \
+    border: none; \
+    font-weight: 500; \
+  } \
+   \
+  p > .user { \
+    opacity: 0.5; \
+  } \
+   \
+  td > .user, \
+  td > time { \
+    white-space: nowrap; \
+  } \
+   \
+  input[type=\"checkbox\"] { \
+    transform: scale(1.5); \
+    margin-right: 0.6em; \
+    vertical-align: middle; \
+  } \
+   \
+  p { \
+    margin-top: 0.5em; \
+    margin-bottom: 0.5em; \
+  } \
+   \
+  .image { \
+    border: none; \
+    margin: 1.5em 0; \
+    padding: 0; \
+    border-radius: 0; \
+    text-align: center; \
+  } \
+   \
+  .code, \
+  code { \
+    background: rgba(135, 131, 120, 0.15); \
+    border-radius: 3px; \
+    padding: 0.2em 0.4em; \
+    border-radius: 5px; \
+    font-size: 85%; \
+    tab-size: 2; \
+  } \
+   \
+  code { \
+    color: inherit; \
+  } \
+   \
+  .code { \
+    padding: 1.5em 1em; \
+  } \
+   \
+  .code-wrap { \
+    white-space: pre-wrap; \
+    word-break: break-all; \
+  } \
+   \
+  .code > code { \
+    background: none; \
+    padding: 0; \
+    font-size: 100%; \
+    color: inherit; \
+  } \
+   \
+  blockquote { \
+    font-size: 1.25em; \
+    margin: 1em 0; \
+    padding-left: 1em; \
+    border-left: 3px solid rgb(55, 53, 47); \
+  } \
+   \
+  .bookmark { \
+    text-decoration: none; \
+    max-height: 8em; \
+    padding: 0; \
+    display: flex; \
+    width: 100%; \
+    align-items: stretch; \
+  } \
+   \
+  .bookmark-title { \
+    font-size: 0.85em; \
+    overflow: hidden; \
+    text-overflow: ellipsis; \
+    height: 1.75em; \
+    white-space: nowrap; \
+  } \
+   \
+  .bookmark-text { \
+    display: flex; \
+    flex-direction: column; \
+  } \
+   \
+  .bookmark-info { \
+    flex: 4 1 180px; \
+    padding: 12px 14px 14px; \
+    display: flex; \
+    flex-direction: column; \
+    justify-content: space-between; \
+  } \
+   \
+  .bookmark-image { \
+    width: 33%; \
+    flex: 1 1 180px; \
+    display: block; \
+    position: relative; \
+    object-fit: cover; \
+    border-radius: 1px; \
+  } \
+   \
+  .bookmark-description { \
+    color: rgba(55, 53, 47, 0.6); \
+    font-size: 0.75em; \
+    overflow: hidden; \
+    max-height: 4.5em; \
+    word-break: break-word; \
+  } \
+   \
+  .bookmark-href { \
+    font-size: 0.75em; \
+    margin-top: 0.25em; \
+  } \
+   \
+  .sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\"; } \
+  .code { font-family: \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace; } \
+  .serif { font-family: Lyon-Text, Georgia, ui-serif, serif; } \
+  .mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; } \
+  .pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; } \
+  .pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; } \
+  .pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; } \
+  .pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, \"Apple Color Emoji\", Arial, sans-serif, \"Segoe UI Emoji\", \"Segoe UI Symbol\", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; } \
+  .pdf .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; } \
+  .pdf:lang(zh-CN) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; } \
+  .pdf:lang(zh-TW) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; } \
+  .pdf:lang(ko-KR) .code { font-family: Source Code Pro, \"SFMono-Regular\", Menlo, Consolas, \"PT Mono\", \"Liberation Mono\", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; } \
+  .pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; } \
+  .pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; } \
+  .pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; } \
+  .pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; } \
+  .pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; } \
+  .pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; } \
+  .pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; } \
+  .pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; } \
+  .highlight-default { \
+    color: rgba(55, 53, 47, 1); \
+  } \
+  .highlight-gray { \
+    color: rgba(120, 119, 116, 1); \
+    fill: rgba(120, 119, 116, 1); \
+  } \
+  .highlight-brown { \
+    color: rgba(159, 107, 83, 1); \
+    fill: rgba(159, 107, 83, 1); \
+  } \
+  .highlight-orange { \
+    color: rgba(217, 115, 13, 1); \
+    fill: rgba(217, 115, 13, 1); \
+  } \
+  .highlight-yellow { \
+    color: rgba(203, 145, 47, 1); \
+    fill: rgba(203, 145, 47, 1); \
+  } \
+  .highlight-teal { \
+    color: rgba(68, 131, 97, 1); \
+    fill: rgba(68, 131, 97, 1); \
+  } \
+  .highlight-blue { \
+    color: rgba(51, 126, 169, 1); \
+    fill: rgba(51, 126, 169, 1); \
+  } \
+  .highlight-purple { \
+    color: rgba(144, 101, 176, 1); \
+    fill: rgba(144, 101, 176, 1); \
+  } \
+  .highlight-pink { \
+    color: rgba(193, 76, 138, 1); \
+    fill: rgba(193, 76, 138, 1); \
+  } \
+  .highlight-red { \
+    color: rgba(212, 76, 71, 1); \
+    fill: rgba(212, 76, 71, 1); \
+  } \
+  .highlight-gray_background { \
+    background: rgba(241, 241, 239, 1); \
+  } \
+  .highlight-brown_background { \
+    background: rgba(244, 238, 238, 1); \
+  } \
+  .highlight-orange_background { \
+    background: rgba(251, 236, 221, 1); \
+  } \
+  .highlight-yellow_background { \
+    background: rgba(251, 243, 219, 1); \
+  } \
+  .highlight-teal_background { \
+    background: rgba(237, 243, 236, 1); \
+  } \
+  .highlight-blue_background { \
+    background: rgba(231, 243, 248, 1); \
+  } \
+  .highlight-purple_background { \
+    background: rgba(244, 240, 247, 0.8); \
+  } \
+  .highlight-pink_background { \
+    background: rgba(249, 238, 243, 0.8); \
+  } \
+  .highlight-red_background { \
+    background: rgba(253, 235, 236, 1); \
+  } \
+  .block-color-default { \
+    color: inherit; \
+    fill: inherit; \
+    border: #bbb 1px solid; \
+  } \
+  .block-color-gray { \
+    color: rgba(120, 119, 116, 1); \
+    fill: rgba(120, 119, 116, 1); \
+  } \
+  .block-color-brown { \
+    color: rgba(159, 107, 83, 1); \
+    fill: rgba(159, 107, 83, 1); \
+  } \
+  .block-color-orange { \
+    color: rgba(217, 115, 13, 1); \
+    fill: rgba(217, 115, 13, 1); \
+  } \
+  .block-color-yellow { \
+    color: rgba(203, 145, 47, 1); \
+    fill: rgba(203, 145, 47, 1); \
+  } \
+  .block-color-teal { \
+    color: rgba(68, 131, 97, 1); \
+    fill: rgba(68, 131, 97, 1); \
+  } \
+  .block-color-blue { \
+    color: rgba(51, 126, 169, 1); \
+    fill: rgba(51, 126, 169, 1); \
+  } \
+  .block-color-purple { \
+    color: rgba(144, 101, 176, 1); \
+    fill: rgba(144, 101, 176, 1); \
+  } \
+  .block-color-pink { \
+    color: rgba(193, 76, 138, 1); \
+    fill: rgba(193, 76, 138, 1); \
+  } \
+  .block-color-red { \
+    color: rgba(212, 76, 71, 1); \
+    fill: rgba(212, 76, 71, 1); \
+  } \
+  .block-color-gray_background { \
+    background: rgba(241, 241, 239, 1); \
+  } \
+  .block-color-brown_background { \
+    background: rgba(244, 238, 238, 1); \
+  } \
+  .block-color-orange_background { \
+    background: rgba(251, 236, 221, 1); \
+  } \
+  .block-color-yellow_background { \
+    background: rgba(251, 243, 219, 1); \
+  } \
+  .block-color-teal_background { \
+    background: rgba(237, 243, 236, 1); \
+  } \
+  .block-color-blue_background { \
+    background: rgba(231, 243, 248, 1); \
+  } \
+  .block-color-purple_background { \
+    background: rgba(244, 240, 247, 0.8); \
+  } \
+  .block-color-pink_background { \
+    background: rgba(249, 238, 243, 0.8); \
+  } \
+  .block-color-red_background { \
+    background: rgba(253, 235, 236, 1); \
+  } \
+  .select-value-color-uiBlue { background-color: rgba(35, 131, 226, .07); } \
+  .select-value-color-pink { background-color: rgba(245, 224, 233, 1); } \
+  .select-value-color-purple { background-color: rgba(232, 222, 238, 1); } \
+  .select-value-color-green { background-color: rgba(219, 237, 219, 1); } \
+  .select-value-color-gray { background-color: rgba(227, 226, 224, 1); } \
+  .select-value-color-translucentGray { background-color: rgba(255, 255, 255, 0.0375); } \
+  .select-value-color-orange { background-color: rgba(250, 222, 201, 1); } \
+  .select-value-color-brown { background-color: rgba(238, 224, 218, 1); } \
+  .select-value-color-red { background-color: rgba(255, 226, 221, 1); } \
+  .select-value-color-yellow { background-color: rgba(253, 236, 200, 1); } \
+  .select-value-color-blue { background-color: rgba(211, 229, 239, 1); } \
+  .select-value-color-pageGlass { background-color: undefined; } \
+  .select-value-color-washGlass { background-color: undefined; } \
+   \
+  .checkbox { \
+    display: inline-flex; \
+    vertical-align: text-bottom; \
+    width: 16; \
+    height: 16; \
+    background-size: 16px; \
+    margin-left: 2px; \
+    margin-right: 5px; \
+  } \
+   \
+  .checkbox-on { \
+    background-image: url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E\"); \
+  } \
+   \
+  .checkbox-off { \
+    background-image: url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E\"); \
+  } \
+   \
+  .equation-container \
+  { \
+  page-break-after: avoid; \
+  page-break-before: avoid; \
+  }";
 }
 
-function loadFile(file) {
-  const reader = new FileReader();
-  reader.onload = function () {
-    editor.innerHTML = reader.result;
-  };
-  reader.readAsText(file);
-}
-
-function edit(html) {
+function applyNewStyle(html) {
   var mod = html.cloneNode(true);
   try {
     if (removeProps.checked) mod.getElementsByClassName("properties")[0].remove();
-    mod.getElementsByTagName("style")[0].innerHTML = newStyle(fontSize.value);
+    mod.getElementsByTagName("style")[0].innerHTML = newStyle(fontSize.value, mergeBreak.value);
 
-    mod.querySelectorAll("pre code").forEach(function(block) { hljs.highlightElement(block); });
+    mod.querySelectorAll("pre code").forEach(function (block) { hljs.highlightElement(block); });
   } catch (error) { }
 
   return mod;
@@ -35,7 +725,7 @@ function savePdf(modifiedHtml) {
   pdfw.document.write(modifiedHtml.innerHTML);
   pdfw.focus();
 
-  pdfw.onload = function() {
+  pdfw.onload = function () {
     hljs.highlightAll();
   };
 
@@ -46,22 +736,197 @@ function savePdf(modifiedHtml) {
 
     setTimeout(function () { pdfw.print(); }, 1000);
   }
-
 }
 
-fileInput.addEventListener('change', (event) => {
-  const file = event.target.files[0];
+function savePdfDocument(doc) {
+  pdfw = window.open('about:blank', '_blank', '');
+  pdfw.document.head.innerHTML = doc.head.innerHTML;
+  pdfw.document.body.innerHTML = doc.body.innerHTML;
+  pdfw.focus();
 
-  try {
-    loadFile(file);
-    downloadButton.removeAttribute('disabled');
-  } catch (error) {
-    downloadButton.setAttribute('disabled', '');
+  pdfw.onload = function () {
+    hljs.highlightAll();
+  };
+
+  if (!previewHtml.checked) {
+    pdfw.onafterprint = function () {
+      pdfw.close();
+    }
+
+    setTimeout(function () { pdfw.print(); }, 1000);
+  }
+}
+
+fileInput.addEventListener('change', (e) => {
+  filesData = [];
+  var files = e.target.files;
+
+  for (const file of files) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const fileData = e.target.result;
+      filesData.push([file.name, fileData]);
+      updateDownloadButton();
+      drawFileList();
+    };
+
+    reader.readAsText(file);
   }
 });
 
-downloadButton.addEventListener('click', () => {
-  const modifiedHtml = edit(editor);
+function drawFileList() {
+  fileList.innerHTML = '';
 
-  savePdf(modifiedHtml);
+  if (filesData.length == 0) {
+    fileList.classList.add('d-none');
+    return;
+  } else {
+    fileList.classList.remove('d-none');
+  }
+
+  for (var i = 0; i < filesData.length; i++) {
+    const [filename, fileData] = filesData[i];
+
+    const card = document.createElement('div');
+    card.classList.add('mt-2', 'row', 'justify-content-center', 'align-items-center');
+
+    const fileName = document.createElement('span');
+    fileName.classList.add('text-truncate', 'align-items-center', 'col-8');
+    fileName.textContent = filename;
+    card.appendChild(fileName);
+
+    const buttonGroup = document.createElement('div');
+    buttonGroup.classList.add('col-4');
+    buttonGroup.classList.add('btn-group');
+
+    const moveUpButton = document.createElement('button');
+    moveUpButton.classList.add('btn', 'btn-sm', 'btn-primary');
+    if (i === 0) moveUpButton.setAttribute('disabled', '');
+    moveUpButton.innerHTML = '<i class="bi bi-arrow-up"></i>';
+    buttonGroup.appendChild(moveUpButton);
+
+    const moveDownButton = document.createElement('button');
+    moveDownButton.classList.add('btn', 'btn-sm', 'btn-primary');
+    if (i === filesData.length - 1) moveDownButton.setAttribute('disabled', '');
+    moveDownButton.innerHTML = '<i class="bi bi-arrow-down"></i>';
+    buttonGroup.appendChild(moveDownButton);
+
+    const removeButton = document.createElement('button');
+    removeButton.classList.add('btn', 'btn-sm', 'btn-danger');
+    removeButton.innerHTML = '<i class="bi bi-dash-circle"></i>';
+    buttonGroup.appendChild(removeButton);
+
+    removeButton.onclick = (e) => {
+      filesData.splice(filesData.map(([name, _]) => name).indexOf(filename), 1);
+      drawFileList();
+      updateDownloadButton();
+    };
+
+    moveUpButton.onclick = (e) => {
+      const index = filesData.map(([name, _]) => name).indexOf(filename);
+      let el = filesData[index];
+      filesData[index] = filesData[index - 1];
+      filesData[index - 1] = el; 
+      drawFileList();
+    };
+
+    moveDownButton.onclick = (e) => {
+      const index = filesData.map(([name, _]) => name).indexOf(filename);
+      let el = filesData[index];
+      filesData[index] = filesData[index + 1];
+      filesData[index + 1] = el; 
+      drawFileList();
+    };
+
+    card.appendChild(buttonGroup);
+
+    fileList.appendChild(card);
+  }
+}
+
+function updateDownloadButton() {
+  if (filesData.length > 0) {
+    downloadButton.removeAttribute('disabled');
+
+    mergingPdfCounter.innerText = filesData.length;
+    if (filesData.length > 1) {
+      mergeButton.removeAttribute('disabled');
+      mergingPdfCounter.classList.remove('d-none');
+    } else {
+      mergeButton.setAttribute('disabled', '');
+      mergingPdfCounter.classList.add('d-none');
+    }
+  } else {
+    downloadButton.setAttribute('disabled', '');
+    mergeButton.setAttribute('disabled', '');
+  }
+}
+
+downloadButton.addEventListener('click', () => {
+  for ([_, fileData] of filesData) {
+    editor.innerHTML = fileData;
+    const modifiedHtml = applyNewStyle(editor);
+    savePdf(modifiedHtml);
+  }
+});
+
+mergeButton.addEventListener('click', () => {
+  var mergedDoc = document.implementation.createHTMLDocument(mergeName.value);
+  var articles = [];
+
+  const style = mergedDoc.createElement('style');
+  style.innerHTML = newStyle(fontSize.value, mergeBreak.value);
+  mergedDoc.head.appendChild(style);
+
+  const contentsTable = mergedDoc.createElement('div');
+  contentsTable.classList.add('sans');
+
+  const pageTitle = mergedDoc.createElement('h1');
+  pageTitle.classList.add('page-title', 'sans');
+  pageTitle.innerText = mergeName.value;
+  mergedDoc.body.appendChild(pageTitle);
+  
+  const tableTitle = mergedDoc.createElement('h1');
+  tableTitle.innerText = indexName.value;
+  contentsTable.appendChild(tableTitle);
+
+  for (const [_, fileData] of filesData) {
+    editor.innerHTML = fileData;
+    editor.getElementsByTagName('article').forEach((a) => articles.push(a));
+  }
+
+  for (const article of articles) {
+    const chapter = article.getElementsByClassName('page-title')[0].innerText;
+    const chapTable = article.getElementsByTagName('nav')[0].outerHTML;
+    
+    const link = mergedDoc.createElement('a');
+    link.href = '#' + article.id;
+    link.classList.add('table_of_contents-link');
+    link.innerText = chapter;
+    
+    const title = mergedDoc.createElement('h3');
+    title.style.marginBottom = '.2rem';
+    title.appendChild(link);
+
+    contentsTable.appendChild(title);
+
+    const nav = mergedDoc.createElement('div');
+    nav.innerHTML = chapTable;
+    contentsTable.appendChild(nav);
+
+    article.getElementsByTagName('nav')[0].outerHTML = '';
+  }
+
+  mergedDoc.body.append(contentsTable);
+
+  for (const _article of articles) {
+    const article = _article.cloneNode(true);
+
+    if (removeProps.checked) article.getElementsByClassName("properties")[0].remove();
+
+    mergedDoc.body.appendChild(article);
+  }
+
+  savePdfDocument(mergedDoc);
 });

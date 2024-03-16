@@ -32,18 +32,31 @@
                             Export a Notion page to HTML, open it with this tool and generate the PDF with the desired 
                             options. You can export the PDF with the system print menu (i.e. by pressing Ctrl+P) 
                             and selecting 'Save as PDF' or similar.
+                            <br><br>
+                            You can also merge multiple HTML exports from Notion into a single PDF. The result will have
+                            a global table of contents with link to each section of the original files. Tweak the order or
+                            remove files you don't want in the merged with the list below.
                         </p>
-                        <div class="row justify-content-center card-body">
+                        <div class="row g-1 justify-content-center card-body">
                             <div class="col-md-auto mt-4">
-                                <input type="file" class="form-control" id="file-input" accept=".html">
+                                <input type="file" class="form-control" id="file-input" accept=".html" multiple>
                             </div>
-                            <div class="col-md-auto mt-md-4 mt-2">
+                            <div class="col-md-auto mt-lg-4 mt-2 btn-group">
                                 <button type="button" class="btn btn-primary" id="download-button" disabled>
                                     <i class="bi bi-file-earmark-pdf"></i>
                                     Generate PDF
                                 </button>
+                                <button type="button" class="btn btn-primary" id="merge-button" disabled>
+                                    <i class="bi bi-files"></i>
+                                    Merge
+                                    <span id="mergingPdfCounter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                                        
+                                        <span class="visually-hidden">PDFs to merge</span>
+                                    </span>
+                                </button>
                             </div>
                         </div>
+                        <div id="file-list" class="card-body d-none"></div>
                         <div class="accordion card-body" id="accordionExample">
                             <div class="accordion-item">
                               <h2 class="accordion-header">
@@ -53,7 +66,7 @@
                               </h2>
                               <div id="collapseOptions" class="accordion-collapse collapse">
                                 <div class="accordion-body">
-                                    <div class="d-flex justify-content-center align-items-center">
+                                    <div class="d-flex d-none justify-content-center align-items-center">
                                         <div class="form-check-reverse form-switch">
                                             <label class="form-check-label text-wrap" for="previewHtml">Don't force printing dialog</label>
                                             <input class="form-check-input" type="checkbox" role="switch" id="previewHtml" checked>
@@ -65,6 +78,12 @@
                                             <input class="form-check-input" type="checkbox" role="switch" id="removeProps" checked>
                                         </div>
                                     </div>
+                                    <div class="d-flex justify-content-center align-items-center mt-2">
+                                        <div class="form-check-reverse form-switch">
+                                            <label class="form-check-label text-wrap" for="mergeBreak">Add page break before chapters in merged file</label>
+                                            <input class="form-check-input" type="checkbox" role="switch" id="mergeBreak" checked>
+                                        </div>
+                                    </div>
                                     <div class="row g-2 mt-2 justify-content-center align-items-center">
                                         <div class="col-auto">
                                           <label for="fontSize" class="col-form-label">Font size</label>
@@ -72,7 +91,23 @@
                                         <div class="col-auto">
                                           <input type="number" id="fontSize" class="form-control" value="12" min="6" max="20">
                                         </div>
-                                      </div>
+                                    </div>
+                                    <div class="row g-2 mt-2 justify-content-center align-items-center">
+                                        <div class="col-auto">
+                                          <label for="mergeName" class="col-form-label">Merged file name</label>
+                                        </div>
+                                        <div class="col-auto">
+                                          <input type="text" id="mergeName" class="form-control" value="Merged">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mt-2 justify-content-center align-items-center">
+                                        <div class="col-auto">
+                                          <label for="indexName" class="col-form-label">Table of contents text</label>
+                                        </div>
+                                        <div class="col-auto">
+                                          <input type="text" id="indexName" class="form-control" value="Index">
+                                        </div>
+                                    </div>
                                 </div>
                               </div>
                             </div>
