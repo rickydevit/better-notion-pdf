@@ -952,7 +952,7 @@ function mergePdf() {
         const chapter = article.getElementsByClassName('page-title')[0].innerText;
         const chapTable = article.getElementsByTagName('nav')[0];
         
-        if (!ignoreHeaders.includes(chapter)) {
+        if (!ignoreHeaders.includes(chapter) && chapTable == null) {
           const link = mergedDoc.createElement('a');
           link.href = '#' + article.id;
           link.classList.add('table_of_contents-link');
