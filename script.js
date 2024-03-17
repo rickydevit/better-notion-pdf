@@ -1,7 +1,10 @@
 const fileInput = document.getElementById('file-input');
 const fileInputMerge = document.getElementById('file-input-merge');
 const downloadButton = document.getElementById('download-button');
+const downloadSaveButton = document.getElementById('download-button-save');
+const uploadButton = document.getElementById('upload-button');
 const mergeButton = document.getElementById('merge-button');
+const mergeSaveButton = document.getElementById('merge-button-save');
 const fileList = document.getElementById('file-list');
 
 var editor = document.createElement('div');
@@ -442,6 +445,7 @@ function newStyle(fontSize, mergeBreak) {
    \
   .code { \
     padding: 1.5em 1em; \
+    page-break-inside: avoid; \
   } \
    \
   .code-wrap { \
@@ -720,6 +724,38 @@ function applyNewStyle(html) {
   return mod;
 }
 
+function createBlob(contents) {
+  const bl = new Blob(contents, {type: 'text/html;charset=utf8'});
+  return URL.createObjectURL(bl);
+}
+
+function openWindow(url) {
+  pdfw = window.open(url, '_blank', '');
+  pdfw.focus();
+
+  pdfw.onload = function () {
+    hljs.highlightAll();
+  };
+
+  if (!previewHtml.checked) {
+    pdfw.onafterprint = function () {
+      pdfw.close();
+    }
+
+    setTimeout(function () { pdfw.print(); }, 1000);
+  }
+}
+
+function downloadBlob(url, filename) {
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = filename + "_export.html";
+  a.hidden = true;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function savePdf(modifiedHtml) {
   pdfw = window.open('about:blank', '_blank', '');
   pdfw.document.write(modifiedHtml.innerHTML);
@@ -757,6 +793,10 @@ function savePdfDocument(doc) {
   }
 }
 
+uploadButton.addEventListener('click', () => {
+  fileInput.click();
+});
+
 fileInput.addEventListener('change', (e) => {
   filesData = [];
   var files = e.target.files;
@@ -773,6 +813,8 @@ fileInput.addEventListener('change', (e) => {
 
     reader.readAsText(file);
   }
+
+  fileInput.value = null;
 });
 
 function drawFileList() {
@@ -792,12 +834,12 @@ function drawFileList() {
     card.classList.add('mt-2', 'row', 'justify-content-center', 'align-items-center');
 
     const fileName = document.createElement('span');
-    fileName.classList.add('text-truncate', 'align-items-center', 'col-8');
+    fileName.classList.add('text-truncate', 'align-items-center', 'col-9');
     fileName.textContent = filename;
     card.appendChild(fileName);
 
     const buttonGroup = document.createElement('div');
-    buttonGroup.classList.add('col-4');
+    buttonGroup.classList.add('col-3');
     buttonGroup.classList.add('btn-group');
 
     const moveUpButton = document.createElement('button');
@@ -848,38 +890,37 @@ function drawFileList() {
 function updateDownloadButton() {
   if (filesData.length > 0) {
     downloadButton.removeAttribute('disabled');
+    downloadSaveButton.removeAttribute('disabled');
 
     mergingPdfCounter.innerText = filesData.length;
     if (filesData.length > 1) {
       mergeButton.removeAttribute('disabled');
+      mergeSaveButton.removeAttribute('disabled');
       mergingPdfCounter.classList.remove('d-none');
     } else {
       mergeButton.setAttribute('disabled', '');
+      mergeSaveButton.setAttribute('disabled', '');
       mergingPdfCounter.classList.add('d-none');
     }
   } else {
     downloadButton.setAttribute('disabled', '');
+    downloadSaveButton.setAttribute('disabled', '');
     mergeButton.setAttribute('disabled', '');
+    mergeSaveButton.setAttribute('disabled', '');
   }
 }
 
-downloadButton.addEventListener('click', () => {
-  for ([_, fileData] of filesData) {
-    editor.innerHTML = fileData;
-    const modifiedHtml = applyNewStyle(editor);
-    savePdf(modifiedHtml);
-  }
-});
-
-mergeButton.addEventListener('click', () => {
+function mergePdf() {
   var mergedDoc = document.implementation.createHTMLDocument(mergeName.value);
   var articles = [];
+  var ignoreHeaders = [];
 
   const style = mergedDoc.createElement('style');
   style.innerHTML = newStyle(fontSize.value, mergeBreak.value);
-  mergedDoc.head.appendChild(style);
+  mergedDoc.body.appendChild(style);
 
   const contentsTable = mergedDoc.createElement('div');
+  contentsTable.id = 'merged-table-of-contents';
   contentsTable.classList.add('sans');
 
   const pageTitle = mergedDoc.createElement('h1');
@@ -891,42 +932,82 @@ mergeButton.addEventListener('click', () => {
   tableTitle.innerText = indexName.value;
   contentsTable.appendChild(tableTitle);
 
+  mergedDoc.body.append(contentsTable);
+
   for (const [_, fileData] of filesData) {
     editor.innerHTML = fileData;
     editor.getElementsByTagName('article').forEach((a) => articles.push(a));
+
+    const toc = editor.querySelectorAll('#merged-table-of-contents');
+    if (toc.length > 0) {
+
+      for (var n of Array.from(toc[0].children)) {
+        if (n.tagName.toUpperCase() != 'H1') contentsTable.appendChild(n);
+        if (n.tagName.toUpperCase() == 'H3') ignoreHeaders.push(n.innerText);
+      }
+
+    } else {
+
+      for (const article of editor.getElementsByTagName('article')) {
+        const chapter = article.getElementsByClassName('page-title')[0].innerText;
+        const chapTable = article.getElementsByTagName('nav')[0];
+        
+        if (!ignoreHeaders.includes(chapter)) {
+          const link = mergedDoc.createElement('a');
+          link.href = '#' + article.id;
+          link.classList.add('table_of_contents-link');
+          link.innerText = chapter;
+          
+          const title = mergedDoc.createElement('h3');
+          title.style.marginBottom = '.2rem';
+          title.appendChild(link);
+      
+          contentsTable.appendChild(title);
+        }
+    
+        if (chapTable != null) {
+          contentsTable.appendChild(chapTable.cloneNode(true));
+          article.getElementsByTagName('nav')[0].outerHTML = '';
+        }
+      }
+
+    }
   }
 
   for (const article of articles) {
-    const chapter = article.getElementsByClassName('page-title')[0].innerText;
-    const chapTable = article.getElementsByTagName('nav')[0].outerHTML;
-    
-    const link = mergedDoc.createElement('a');
-    link.href = '#' + article.id;
-    link.classList.add('table_of_contents-link');
-    link.innerText = chapter;
-    
-    const title = mergedDoc.createElement('h3');
-    title.style.marginBottom = '.2rem';
-    title.appendChild(link);
-
-    contentsTable.appendChild(title);
-
-    const nav = mergedDoc.createElement('div');
-    nav.innerHTML = chapTable;
-    contentsTable.appendChild(nav);
-
-    article.getElementsByTagName('nav')[0].outerHTML = '';
-  }
-
-  mergedDoc.body.append(contentsTable);
-
-  for (const _article of articles) {
-    const article = _article.cloneNode(true);
-
-    if (removeProps.checked) article.getElementsByClassName("properties")[0].remove();
+    if (removeProps.checked) try { article.getElementsByClassName("properties")[0].remove() } catch (_) {};
 
     mergedDoc.body.appendChild(article);
   }
 
-  savePdfDocument(mergedDoc);
+  return mergedDoc;
+}
+
+downloadButton.addEventListener('click', () => {
+  for ([_, fileData] of filesData) {
+    editor.innerHTML = fileData;
+    const modifiedHtml = applyNewStyle(editor);
+    openWindow(createBlob([modifiedHtml.innerHTML]));
+  }
+});
+
+downloadSaveButton.addEventListener('click', () => {
+  for ([_, fileData] of filesData) {
+    editor.innerHTML = fileData;
+    const modifiedHtml = applyNewStyle(editor);
+    const chapter = modifiedHtml.getElementsByClassName('page-title')[0].innerText;
+    
+    downloadBlob(createBlob([modifiedHtml.innerHTML]), chapter);
+  }
+});
+
+
+mergeButton.addEventListener('click', () => {
+  const merged = mergePdf();
+  openWindow(createBlob([merged.head.outerHTML, merged.body.outerHTML]));
+});
+
+mergeSaveButton.addEventListener('click', () => {
+  const merged = mergePdf();
+  downloadBlob(createBlob([merged.head.outerHTML, merged.body.outerHTML]), mergeName.value);
 });
